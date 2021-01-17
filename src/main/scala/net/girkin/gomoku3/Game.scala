@@ -1,5 +1,7 @@
 package net.girkin.gomoku3
 
+import java.util.UUID
+
 enum Player {
   case One, Two
 
