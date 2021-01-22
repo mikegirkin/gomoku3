@@ -1,6 +1,7 @@
 package net.girkin.gomoku3
 
 import cats.effect.IO
+import cats.syntax._
 import fs2.Pipe
 
 import java.nio.channels.NetworkChannel
@@ -17,7 +18,6 @@ import java.nio.channels.NetworkChannel
   def simplePipe: Pipe[IO, String, String] = {
     ???
   }
-
 
 
 

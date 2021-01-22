@@ -9,28 +9,28 @@ class GameSpec extends wordspec.AnyWordSpec with should.Matchers with Inside {
     
     "reject move" when {
       "wrong player tries" in {
-        val attempt = MoveRequest(0, 0, Player.Two)
+        val attempt = GameMoveRequest(0, 0, Player.Two)
         val result = game.attemptMove(attempt)
         result shouldBe Left(MoveAttemptFailure.WrongPlayer)
       }
       
       "move is out of bounds" in {
-        val attempt = MoveRequest(0, 5, Player.One)
+        val attempt = GameMoveRequest(0, 5, Player.One)
         val result = game.attemptMove(attempt)
         result shouldBe Left(MoveAttemptFailure.ImpossibleMove)
       }
       
       "attempts to move into place already taken" in {
-        val moveOne = MoveRequest(0, 0, Player.One)
+        val moveOne = GameMoveRequest(0, 0, Player.One)
         val gameAfterMoveOne = game.attemptMove(moveOne).toOption.get
-        val attempt = MoveRequest(0, 0, Player.Two)
+        val attempt = GameMoveRequest(0, 0, Player.Two)
         val result = gameAfterMoveOne.attemptMove(attempt)
         result shouldBe Left(MoveAttemptFailure.ImpossibleMove)
       }
     }
     
     "accept move" in {
-      val attempt = MoveRequest(0, 0, Player.One)
+      val attempt = GameMoveRequest(0, 0, Player.One)
       val result = game.attemptMove(attempt)
       inside(result) {
         case Right(game) =>
@@ -40,11 +40,11 @@ class GameSpec extends wordspec.AnyWordSpec with should.Matchers with Inside {
     
     "be able to detect winner" in {
       val moves = List(
-        MoveRequest(0, 0, Player.One),
-        MoveRequest(0, 1, Player.Two),
-        MoveRequest(1, 0, Player.One),
-        MoveRequest(0, 2, Player.Two),
-        MoveRequest(2, 0, Player.One)
+        GameMoveRequest(0, 0, Player.One),
+        GameMoveRequest(0, 1, Player.Two),
+        GameMoveRequest(1, 0, Player.One),
+        GameMoveRequest(0, 2, Player.Two),
+        GameMoveRequest(2, 0, Player.One)
       )
       val gameStateAfterMoves = moves.foldLeft(Vector(game)) {
         case (stateList, move) => 

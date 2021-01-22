@@ -1,23 +1,25 @@
 package net.girkin.gomoku3.store
 
-import net.girkin.gomoku3.GameRules
+import net.girkin.gomoku3
+import net.girkin.gomoku3._
 import org.scalatest._
 import org.scalatest.matchers._
 
 import java.time.Instant
 
 class InmemGameStateStoreSpec extends wordspec.AnyWordSpec with should.Matchers with Inside {
-  
+
   "InMemGameStateStore" should {
     "be able to store single game state" in {
       val storeF = InmemGameStateStore.create()
-      val testGameState = GameState(
+      val rules = GameRules(3, 3, 3)
+      val game = Game.create(rules)
+      val testGameState = gomoku3.GameState(
         GameId.create,
-        GameRules(3, 3, 3),
         Instant.now(),
         PlayerId.create,
         PlayerId.create,
-        Vector.empty
+        game
       )
       val resultF = for {
         store <- storeF
@@ -26,9 +28,9 @@ class InmemGameStateStoreSpec extends wordspec.AnyWordSpec with should.Matchers 
       } yield {
         returned
       }
-      
+
       val result: Option[GameState] = resultF.unsafeRunSync()
-      
+
       result shouldBe Some(testGameState)
     }
   }

@@ -16,7 +16,7 @@ case class GameRules(
   winCondition: Int
 )
 
-case class MoveRequest(
+case class GameMoveRequest(
   row: Int,
   column: Int,
   player: Player
@@ -30,14 +30,14 @@ enum MoveAttemptFailure {
 
 case class Game private(field: GameField, expectingMoveFrom: Player, rules: GameRules) {
 
-  def validateMove(request: MoveRequest): Option[MoveAttemptFailure] = {
+  def validateMove(request: GameMoveRequest): Option[MoveAttemptFailure] = {
     if (request.player != expectingMoveFrom) Some(MoveAttemptFailure.WrongPlayer)
     else if (!field.withinBoundaries(request.row, request.column)) Some(MoveAttemptFailure.ImpossibleMove)
     else if (field.get(request.row, request.column) != Option(CellState.empty)) Some(MoveAttemptFailure.ImpossibleMove)
     else None
   }
 
-  def attemptMove(request: MoveRequest): Either[MoveAttemptFailure, Game] = {
+  def attemptMove(request: GameMoveRequest): Either[MoveAttemptFailure, Game] = {
     validateMove(request).fold {
       val newFieldOpt = field.update(request.row, request.column, CellState.taken(request.player))
       newFieldOpt.fold(
