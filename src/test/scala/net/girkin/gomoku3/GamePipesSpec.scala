@@ -4,6 +4,7 @@ import net.girkin.gomoku3.store.InmemGameStateStore
 import org.scalatest._
 import org.scalatest.matchers._
 import testutil._
+import net.girkin.gomoku3.Ids.*
 
 class GamePipesSpec extends wordspec.AnyWordSpec with should.Matchers with Inside with IOTest {
   "GamePipes" should {

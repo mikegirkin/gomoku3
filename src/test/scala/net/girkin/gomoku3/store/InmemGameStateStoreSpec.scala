@@ -2,6 +2,7 @@ package net.girkin.gomoku3.store
 
 import net.girkin.gomoku3
 import net.girkin.gomoku3.*
+import net.girkin.gomoku3.Ids.*
 import net.girkin.gomoku3.testutil.IOTest
 import org.scalatest.*
 import org.scalatest.matchers.*

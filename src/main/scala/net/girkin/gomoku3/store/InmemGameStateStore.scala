@@ -2,6 +2,7 @@ package net.girkin.gomoku3.store
 
 import cats.effect.{IO, Ref}
 import net.girkin.gomoku3.*
+import net.girkin.gomoku3.Ids.*
 
 class InmemGameStateStore private (storeRef: Ref[IO, Vector[GameState]]) extends GameStateStore {
   

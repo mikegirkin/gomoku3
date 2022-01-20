@@ -1,5 +1,7 @@
 package net.girkin.gomoku3
 
+import net.girkin.gomoku3.Ids.*
+
 import java.time.Instant
 
 case class GameState(

@@ -5,6 +5,7 @@ import net.girkin.gomoku3.store.InmemGameStateStore
 import org.scalatest._
 import org.scalatest.matchers._
 import net.girkin.gomoku3.testutil.IOTest
+import net.girkin.gomoku3.Ids.*
 
 import java.time.Instant
 

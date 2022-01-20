@@ -8,6 +8,7 @@ import cats.implicits._
 import cats.effect._
 import net.girkin.gomoku3._
 import net.girkin.gomoku3.store.GameStateStore
+import net.girkin.gomoku3.Ids.*
 
 enum GameFinishReason {
   case PlayerWon(playerId: PlayerId)
