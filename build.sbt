@@ -1,4 +1,5 @@
-val scala3Version = "3.0.0-M3"
+val scala3Version = "3.1.1"
+val http4sVersion = "0.23.7"
 
 lazy val root = project
   .in(file("."))
@@ -9,8 +10,10 @@ lazy val root = project
     scalaVersion := scala3Version,
 
     libraryDependencies ++= Seq(
-      "co.fs2" %% "fs2-core" % "2.5.0",
+      "org.http4s" %% "http4s-dsl"          % http4sVersion,
+      "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+      "org.http4s" %% "http4s-blaze-client" % http4sVersion,
 
-      "org.scalatest" %% "scalatest" % "3.2.3" % "test"
+      "org.scalatest" %% "scalatest" % "3.2.9" % "test"
     )
   )

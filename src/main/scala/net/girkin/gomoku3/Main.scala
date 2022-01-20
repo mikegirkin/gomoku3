@@ -15,11 +15,5 @@ import java.nio.channels.NetworkChannel
   def msg = "I was compiled by Scala 3. :)"
 
 
-  def simplePipe: Pipe[IO, String, String] = {
-    ???
-  }
-
-
-
 
 

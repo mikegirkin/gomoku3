@@ -1,13 +1,14 @@
 package net.girkin.gomoku3.store
 
 import net.girkin.gomoku3
-import net.girkin.gomoku3._
-import org.scalatest._
-import org.scalatest.matchers._
+import net.girkin.gomoku3.*
+import net.girkin.gomoku3.testutil.IOTest
+import org.scalatest.*
+import org.scalatest.matchers.*
 
 import java.time.Instant
 
-class InmemGameStateStoreSpec extends wordspec.AnyWordSpec with should.Matchers with Inside {
+class InmemGameStateStoreSpec extends wordspec.AnyWordSpec with should.Matchers with Inside with IOTest {
 
   "InMemGameStateStore" should {
     "be able to store single game state" in {

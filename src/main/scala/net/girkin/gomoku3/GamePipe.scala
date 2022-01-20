@@ -6,7 +6,6 @@ import java.time._
 import cats.data.EitherT
 import cats.implicits._
 import cats.effect._
-import cats.effect.concurrent.Ref
 import net.girkin.gomoku3._
 import net.girkin.gomoku3.store.GameStateStore
 

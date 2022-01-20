@@ -1,8 +1,7 @@
 package net.girkin.gomoku3.store
 
-import cats.effect.IO
-import cats.effect.concurrent.Ref
-import net.girkin.gomoku3._
+import cats.effect.{IO, Ref}
+import net.girkin.gomoku3.*
 
 class InmemGameStateStore private (storeRef: Ref[IO, Vector[GameState]]) extends GameStateStore {
   
