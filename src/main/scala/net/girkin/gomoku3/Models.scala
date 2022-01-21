@@ -4,6 +4,7 @@ import java.util.UUID
 
 trait IdCreator[T >: UUID] {
   def create: T = UUID.randomUUID()
+  def fromUUID(uuid: UUID): T = uuid
 }
 
 trait OpaqueUUIDExtensions[T <: UUID] {
@@ -22,4 +23,7 @@ object Ids {
 
   opaque type PlayerId = UUID
   object PlayerId extends IdCreator[PlayerId] with OpaqueUUIDExtensions[PlayerId]
+
+  opaque type UserId = UUID
+  object UserId extends IdCreator[UserId] with OpaqueUUIDExtensions[UserId]
 }
