@@ -1,9 +1,12 @@
 package net.girkin.gomoku3
 
+import net.girkin.gomoku3.Ids.{MoveId, UserId}
+
 import java.util.UUID
 
-enum Player {
-  case One, Two
+enum Player(val value: Int) {
+  case One extends Player(1)
+  case Two extends Player(2)
 
   def other = {
     if(this == One) Two else One
@@ -22,29 +25,46 @@ case class GameMoveRequest(
   player: Player
 )
 
+case class MoveMade(
+  moveId: MoveId,
+  row: Int,
+  col: Int,
+  player: Player
+)
+
 enum MoveAttemptFailure {
   case WrongPlayer
   case ImpossibleMove
   case GameFinished
 }
 
-case class Game private(field: GameField, expectingMoveFrom: Player, rules: GameRules) {
+final case class Game private(
+  field: GameField,
+  expectingMoveFrom: Player,
+  rules: GameRules,
+  movesMade: Vector[MoveMade]
+) {
 
-  def validateMove(request: GameMoveRequest): Option[MoveAttemptFailure] = {
+  private def validateMove(request: MoveMade): Option[MoveAttemptFailure] = {
     if (request.player != expectingMoveFrom) Some(MoveAttemptFailure.WrongPlayer)
-    else if (!field.withinBoundaries(request.row, request.column)) Some(MoveAttemptFailure.ImpossibleMove)
-    else if (field.get(request.row, request.column) != Option(CellState.empty)) Some(MoveAttemptFailure.ImpossibleMove)
+    else if (!field.withinBoundaries(request.row, request.col)) Some(MoveAttemptFailure.ImpossibleMove)
+    else if (field.get(request.row, request.col) != Option(CellState.empty)) Some(MoveAttemptFailure.ImpossibleMove)
     else None
   }
 
   def attemptMove(request: GameMoveRequest): Either[MoveAttemptFailure, Game] = {
-    validateMove(request).fold {
-      val newFieldOpt = field.update(request.row, request.column, CellState.taken(request.player))
+    val moveMade = MoveMade(MoveId.create, request.row, request.column, request.player)
+    executeMoveMade(moveMade)
+  }
+
+  def executeMoveMade(move: MoveMade): Either[MoveAttemptFailure, Game] = {
+    validateMove(move).fold {
+      val newFieldOpt = field.update(move.row, move.col, CellState.taken(move.player))
       newFieldOpt.fold(
         Left(MoveAttemptFailure.ImpossibleMove)
-      ) { newFieldState => 
-          val newGameState = this.copy(newFieldState, request.player.other) 
-          Right(newGameState)
+      ) { newFieldState =>
+        val newGameState = this.copy(newFieldState, this.expectingMoveFrom.other, movesMade = this.movesMade.appended(move))
+        Right(newGameState)
       }
     } { error =>
       Left(error)
@@ -58,6 +78,6 @@ case class Game private(field: GameField, expectingMoveFrom: Player, rules: Game
 
 object Game {
   def create(rules: GameRules) = {
-    Game(GameField.empty(rules.height, rules.width), Player.One, rules)
+    Game(GameField.empty(rules.height, rules.width), Player.One, rules, Vector.empty)
   }
 }

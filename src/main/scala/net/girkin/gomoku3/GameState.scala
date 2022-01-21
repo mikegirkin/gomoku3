@@ -4,13 +4,6 @@ import net.girkin.gomoku3.Ids.*
 
 import java.time.Instant
 
-case class MoveMade(
-  id: MoveId,
-  row: Int,
-  col: Int,
-  player: UserId
-)
-
 case class GameState(
   gameId: GameId,
   createdAt: Instant,

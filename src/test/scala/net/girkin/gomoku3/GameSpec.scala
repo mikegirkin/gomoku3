@@ -35,6 +35,10 @@ class GameSpec extends wordspec.AnyWordSpec with should.Matchers with Inside {
       inside(result) {
         case Right(game) =>
           game.expectingMoveFrom shouldBe Player.Two
+          game.movesMade should have length(1)
+          game.movesMade(0) should matchPattern {
+            case MoveMade(_, attempt.column, attempt.row, attempt.player) =>
+          }
       }
     }
     

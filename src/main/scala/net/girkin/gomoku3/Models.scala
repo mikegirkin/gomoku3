@@ -25,6 +25,6 @@ object Ids {
 
   opaque type UserId = UUID
   object UserId extends IdCreator[UserId] with OpaqueUUIDExtensions[UserId]
-}
 
+}
 
