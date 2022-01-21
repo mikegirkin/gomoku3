@@ -11,19 +11,19 @@ import net.girkin.gomoku3.store.GameStateStore
 import net.girkin.gomoku3.Ids.*
 
 enum GameFinishReason {
-  case PlayerWon(playerId: PlayerId)
-  case PlayerConceded(playerId: PlayerId)
+  case PlayerWon(playerId: UserId)
+  case PlayerConceded(playerId: UserId)
 }
 
 enum GameStateUpdate(gameId: GameId) {
   case WrongRequest(gameId: GameId) extends GameStateUpdate(gameId)   
-  case MoveMade(gameId: GameId, playerId: PlayerId, row: Int, col: Int) extends GameStateUpdate(gameId)
+  case MoveMade(gameId: GameId, playerId: UserId, row: Int, col: Int) extends GameStateUpdate(gameId)
   case GameFinished(gameId: GameId) extends GameStateUpdate(gameId)
 }
 
 case class MoveRequest(
   gameId: GameId,
-  playerId: PlayerId,
+  playerId: UserId,
   row: Int,
   column: Int
 )
@@ -51,7 +51,7 @@ class GamePipe private (
   
   private def updateGameStateStores(gameState: GameState): IO[GameState] = {
     for {
-      _ <- gameStore.save(gameState)
+      _ <- gameStore.insert(gameState)
       result <- gameStateRef.modify(_ => (gameState, gameState))
     } yield {
       result
@@ -74,8 +74,8 @@ class GamePipe private (
 }
 
 object GamePipe {
-  def create(gameStateStore: GameStateStore)(gameId: GameId, playerOne: PlayerId, playerTwo: PlayerId, game: Game): IO[GamePipe] = {
-    val state = GameState(gameId, created = Instant.now, playerOne, playerTwo, game)
+  def create(gameStateStore: GameStateStore)(gameId: GameId, playerOne: UserId, playerTwo: UserId, game: Game): IO[GamePipe] = {
+    val state = GameState(gameId, createdAt = Instant.now, playerOne, playerTwo, game)
     for {
       gameStateRef <- Ref.of[IO, GameState](state)
     } yield {

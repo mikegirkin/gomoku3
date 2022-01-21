@@ -23,8 +23,7 @@ trait UserReporitory[F[_]] {
 }
 
 class PsqlUserRepository(transactor: Transactor[IO]) extends UserReporitory[IO] {
-  implicit val userIdGet: Get[UserId] = Get[UUID].tmap { uuid => UserId.fromUUID(uuid) }
-  implicit val userIdPut: Put[UserId] = Put[UUID].tcontramap { userId => userId.toUUID }
+  import net.girkin.gomoku3.PsqlDoobieIdRepresentations.*
 
   override def getById(
     userId: UserId

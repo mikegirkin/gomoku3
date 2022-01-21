@@ -1,5 +1,7 @@
 package net.girkin.gomoku3
 
+import net.girkin.gomoku3.Ids.UserId
+
 import java.util.UUID
 
 trait IdCreator[T >: UUID] {
@@ -21,9 +23,8 @@ object Ids {
   opaque type MoveId = UUID
   object MoveId extends IdCreator[MoveId] with OpaqueUUIDExtensions[MoveId]
 
-  opaque type PlayerId = UUID
-  object PlayerId extends IdCreator[PlayerId] with OpaqueUUIDExtensions[PlayerId]
-
   opaque type UserId = UUID
   object UserId extends IdCreator[UserId] with OpaqueUUIDExtensions[UserId]
 }
+
+
