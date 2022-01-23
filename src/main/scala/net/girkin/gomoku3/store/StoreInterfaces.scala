@@ -7,8 +7,22 @@ import net.girkin.gomoku3.Ids.*
 import java.time.Instant
 import java.util.UUID
 
+enum GameStatus:
+  case Active
+  case Finished
+
+case class ShortGameRecord(
+  gameId: GameId,
+  createdAt: Instant,
+  playerOne: UserId,
+  playerTwo: UserId,
+  status: GameStatus,
+  rules: GameRules
+)
+
 trait GameStateStore {
   def insert(request: GameState): IO[Unit]
   def get(gameId: GameId): IO[Option[GameState]]
+  def listForUser(userId: UserId): IO[List[ShortGameRecord]]
 }
 

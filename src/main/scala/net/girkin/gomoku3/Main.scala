@@ -1,5 +1,7 @@
 package net.girkin.gomoku3
 
+import cats.data.{Kleisli, OptionT}
+import io.circe.syntax._
 import cats.effect.{ExitCode, IO}
 import cats.effect.unsafe.IORuntime
 import cats.effect.implicits.*
@@ -10,10 +12,13 @@ import org.http4s.dsl.io.*
 import org.http4s.blaze.server.*
 import org.http4s.implicits.*
 import fs2.Pipe
-import net.girkin.gomoku3.auth.{AuthPrimitives, GoogleAuthImpl, PrivateKey, PsqlUserRepository, SecurityConfiguration}
+import net.girkin.gomoku3.auth.{AuthErr, CookieAuth, GoogleAuthImpl, PrivateKey, PsqlUserRepository, SecurityConfiguration}
 import org.http4s.HttpRoutes
 import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.headers.Location
 import org.http4s.server.Router
+import org.http4s.util.CaseInsensitiveString
+import org.typelevel.ci.CIString
 
 import java.nio.channels.NetworkChannel
 import scala.concurrent.ExecutionContext
@@ -42,8 +47,11 @@ import scala.concurrent.ExecutionContext
   )
   val client = BlazeClientBuilder[IO].resource
 
+  val loginUrl = uri"/login"
+  val cookieAuth = new CookieAuth[IO](privateKey, loginUrl)
+
   val authService = new GoogleAuthImpl[IO](
-    new AuthPrimitives[IO](privateKey),
+    cookieAuth,
     userRepository,
     securityConfiguration,
     client

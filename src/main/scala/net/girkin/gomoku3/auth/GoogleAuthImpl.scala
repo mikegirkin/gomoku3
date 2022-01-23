@@ -31,7 +31,7 @@ enum GoogleAuthError:
   case GoogleAuthResponseIncomprehensible extends GoogleAuthError
 
 class GoogleAuthImpl[F[_]: Concurrent](
-  authPrimitives: AuthPrimitives[F],
+  authPrimitives: CookieAuth[F],
   userStore: UserReporitory[F],
   config: SecurityConfiguration,
   httpClient: Resource[F, Client[F]]
@@ -177,7 +177,7 @@ class GoogleAuthImpl[F[_]: Concurrent](
             path = Some("/")
           )
         )),
-        AuthToken(user.userId)
+        AuthUser.AuthToken(user.userId)
       )
     }
 

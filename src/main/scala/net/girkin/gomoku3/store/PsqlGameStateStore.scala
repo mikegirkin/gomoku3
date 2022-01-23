@@ -18,7 +18,7 @@ import java.time.Instant
 class PsqlGameStateStore(transactor: Transactor[IO]) extends GameStateStore {
   import PsqlDoobieIdRepresentations.*
 
-  private case class GameRecord(
+  private case class GameDBRecord(
     gameId: GameId,
     createdAt: Instant,
     playerOne: UserId,
@@ -28,7 +28,7 @@ class PsqlGameStateStore(transactor: Transactor[IO]) extends GameStateStore {
     winCondition: Int
   )
 
-  private case class MoveRecord(
+  private case class MoveDbRecord(
     moveId: MoveId,
     gameId: GameId,
     seq: Int,
@@ -54,7 +54,7 @@ class PsqlGameStateStore(transactor: Transactor[IO]) extends GameStateStore {
       |select id, created_at, player_one, player_two, height, width, win_condition
       |from games
       |where id = ${gameId}""".stripMargin
-      .query[GameRecord]
+      .query[GameDBRecord]
       .option
 
     val query = for {
@@ -65,6 +65,13 @@ class PsqlGameStateStore(transactor: Transactor[IO]) extends GameStateStore {
     }
 
     query.value.transact(transactor)
+  }
+
+
+  override def listForUser(
+    userId: UserId
+  ): IO[List[ShortGameRecord]] = {
+    ???
   }
 
   def insertMove(gameId: GameId, moveMade: MoveMade): IO[Unit] = {
@@ -80,17 +87,17 @@ class PsqlGameStateStore(transactor: Transactor[IO]) extends GameStateStore {
       .transact(transactor)
   }
 
-  private def getMovesQuery(gameId: GameId): ConnectionIO[Vector[MoveRecord]] = {
+  private def getMovesQuery(gameId: GameId): ConnectionIO[Vector[MoveDbRecord]] = {
     val query = sql"""
       |select id, game_id, seq, created_at, row, col, player_number from game_moves
       |where game_id = ${gameId}
       |order by seq
       |""".stripMargin
-    query.query[MoveRecord]
+    query.query[MoveDbRecord]
       .to[Vector]
   }
 
-  private def restoreGameStateFromRecords(gameRecord: GameRecord, moveRecords: Seq[MoveRecord]): GameState = {
+  private def restoreGameStateFromRecords(gameRecord: GameDBRecord, moveRecords: Seq[MoveDbRecord]): GameState = {
     val game = Game.create(GameRules(gameRecord.height, gameRecord.width, gameRecord.winCondition))
 
     val gameWithMoves = moveRecords.foldLeft(Either.right[MoveAttemptFailure, Game](game)) {

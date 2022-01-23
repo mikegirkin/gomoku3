@@ -31,6 +31,7 @@ lazy val root = project
 
       "commons-codec" % "commons-codec" % "1.15",
 
-      "org.scalatest" %% "scalatest" % "3.2.9" % Test
-    )
+      "org.scalatest" %% "scalatest"    % "3.2.9" % Test,
+      "org.mockito"    % "mockito-core" % "4.2.0" % Test,
   )
+)
