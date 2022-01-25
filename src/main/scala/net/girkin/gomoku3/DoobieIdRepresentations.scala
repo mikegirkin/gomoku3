@@ -7,10 +7,14 @@ import doobie.implicits.javasql.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 import doobie.postgres.pgisimplicits.*
+import io.circe.Json
+import io.circe.parser._
+import cats.syntax.either._
+import org.postgresql.util.PGobject
 
 import java.util.UUID
 
-object PsqlDoobieIdRepresentations {
+object DoobieIdRepresentations {
 
   private def idMeta[T <: UUID](converter: OpaqueUUIDExtensions[T] & IdCreator[T]): Meta[T] =
     Meta[UUID].timap(converter.fromUUID)(converter.idToUUID)
@@ -19,7 +23,7 @@ object PsqlDoobieIdRepresentations {
   given gameIdGet: Meta[GameId] = idMeta[GameId](GameId)
   given moveIdMeta: Meta[MoveId] = idMeta[MoveId](MoveId)
   given joinGameRequestIdMeta: Meta[JoinGameRequestId] = idMeta[JoinGameRequestId](JoinGameRequestId)
-  given gameCreatedIdMeta: Meta[GameCreatedId] = idMeta[GameCreatedId](GameCreatedId)
+  given gameEventMeta: Meta[GameEventId] = idMeta[GameEventId](GameEventId)
 
   given playerMeta: Meta[Player] = Meta[Int].timap {
     case 1 => Player.One
@@ -28,4 +32,16 @@ object PsqlDoobieIdRepresentations {
     _.value
   }
 
+  given jsonMeta: Meta[Json] =
+    Meta.Advanced.other[PGobject]("json").timap[Json](
+      a => parse(a.getValue).leftMap[Json](e => throw e).merge)(
+      a => {
+        val o = new PGobject
+        o.setType("json")
+        o.setValue(a.noSpaces)
+        o
+      }
+    )
 }
+
+

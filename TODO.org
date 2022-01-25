@@ -3,8 +3,9 @@
 ** DONE /joinRandom creates a new player queue 
    CLOSED: [2022-01-25 Tue 20:44]
 
-** TODO Change game_created table to game
-
+** DONE Change game_created table to game events
+   CLOSED: [2022-01-25 Tue 21:51]
+   
 ** TODO Refactor GameStateStore and JoinGameService: split queries and transaction execution
 
 ** TODO Return active games for the user 

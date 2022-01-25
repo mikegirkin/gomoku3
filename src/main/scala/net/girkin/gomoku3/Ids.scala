@@ -40,9 +40,9 @@ object Ids {
     override def fromUUID(uuid: UUID): JoinGameRequestId = uuid
   }
 
-  opaque type GameCreatedId <: UUID = UUID
-  object GameCreatedId extends IdCreator[GameCreatedId] with OpaqueUUIDExtensions[GameCreatedId] {
-    override def fromUUID(uuid: UUID): GameCreatedId = uuid
+  opaque type GameEventId <: UUID = UUID
+  object GameEventId extends IdCreator[GameEventId] with OpaqueUUIDExtensions[GameEventId] {
+    override def fromUUID(uuid: GameId): GameEventId = uuid
   }
 
 }

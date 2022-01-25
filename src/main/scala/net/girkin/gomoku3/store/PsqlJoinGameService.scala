@@ -19,19 +19,11 @@ class PsqlJoinGameService(
   gameStateStore: GameStateStore,
   transactor: Transactor[IO]
 ) {
-  import net.girkin.gomoku3.PsqlDoobieIdRepresentations.given
+  import net.girkin.gomoku3.DoobieIdRepresentations.given
 
   private case class JoinRequestRecord(
     id: JoinGameRequestId,
     userId: UserId,
-    createdAt: Instant
-  )
-
-  private case class GameCreatedRecord(
-    id: GameCreatedId,
-    requestLeft: JoinGameRequestId,
-    requestRight: JoinGameRequestId,
-    gameId: GameId,
     createdAt: Instant
   )
 
@@ -46,20 +38,22 @@ class PsqlJoinGameService(
       .map(_ => ())
   }
 
-  def createGames(gameRules: GameRules): IO[Vector[GameState]] = {
+  private def openedJoinRequestQuery(): ConnectionIO[Vector[JoinRequestRecord]] = {
     val query = sql"""
       |select join_requests.id, join_requests.user_id, join_requests.created_at
       |from join_requests
-      |  left join game_created gc on join_requests.id = gc.request_left or join_requests.id = gc.request_right
+      |  left join game_events gc on
+      |    gc.event = 'GameCreated' and
+      |    (join_requests.id = uuid(gc.data->>'leftJoinRequestId') or join_requests.id = uuid(gc.data->>'rightJoinRequestId'))
       |where gc.id is null
       |""".stripMargin
-
-    val waitingRequestsF: ConnectionIO[Vector[JoinRequestRecord]] = query
-      .query[JoinRequestRecord]
+    query.query[JoinRequestRecord]
       .to[Vector]
+  }
 
+  def createGames(gameRules: GameRules): IO[Vector[GameState]] = {
     val pairedWaitingRequestsF: ConnectionIO[Vector[(JoinRequestRecord, JoinRequestRecord)]] =
-      waitingRequestsF.map { joinRequestsVector =>
+      openedJoinRequestQuery().map { joinRequestsVector =>
         joinRequestsVector.grouped(2).collect {
           case Vector(left, right) => (left, right)
         }.toVector
@@ -79,26 +73,14 @@ class PsqlJoinGameService(
     leftRequest: JoinRequestRecord,
     rightRequest: JoinRequestRecord
   ): ConnectionIO[GameState] = {
-
-    def insertGameCreatedQuery(
-      requestLeftId: JoinGameRequestId,
-      requestRightId: JoinGameRequestId,
-      gameId: GameId
-    ): ConnectionIO[Option[GameCreatedRecord]] =
-      sql"""
-        |insert into game_created (id, request_left, request_right, game_id, created_at)
-        |values (${GameCreatedId.create}, ${requestLeftId}, ${requestRightId}, ${gameId}, ${Instant.now()})
-        |returning id, request_left, request_right, game_id, created_at
-        |""".stripMargin
-        .query[GameCreatedRecord]
-        .option
-
     val newGame = GameState.create(leftRequest.userId, rightRequest.userId, gameRules)
     for {
       _ <- gameStateStore.insertQuery(newGame)
-      gameCreatedRecord <- insertGameCreatedQuery(leftRequest.id, rightRequest.id, newGame.gameId)
+      event = GameEvent.gameCreated(newGame.gameId, leftRequest.id, rightRequest.id)
+      gameCreatedRecord <- PsqlGameEventQueries.insertGameCreatedQuery(event)
     } yield {
       newGame
     }
   }
 }
+

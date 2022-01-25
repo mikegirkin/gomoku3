@@ -30,10 +30,10 @@ create table join_requests (
     created_at timestamp not null
 );
 
-create table game_created (
+create table game_events (
     id UUID primary key,
-    request_left UUID not null references join_requests(id),
-    request_right UUID not null references join_requests(id),
+    event text not null check (event in ('GameCreated', 'GameFinished')),
     game_id UUID not null references games(id),
+    data json not null,
     created_at timestamp not null
 );

@@ -16,7 +16,7 @@ import doobie.postgres.pgisimplicits.*
 import java.time.Instant
 
 class PsqlGameStateStore(transactor: Transactor[IO]) extends GameStateStore {
-  import PsqlDoobieIdRepresentations.given
+  import DoobieIdRepresentations.given
 
   private case class GameDBRecord(
     gameId: GameId,
