@@ -12,6 +12,7 @@ import doobie.postgres.pgisimplicits.*
 import net.girkin.gomoku3.{GameRules, GameState}
 import net.girkin.gomoku3.Ids.*
 import net.girkin.gomoku3.Ops.|>
+import net.girkin.gomoku3.store.PsqlJoinGameRequestsQueries._
 
 import java.time.Instant
 
@@ -21,34 +22,11 @@ class PsqlJoinGameService(
 ) {
   import net.girkin.gomoku3.DoobieIdRepresentations.given
 
-  private case class JoinRequestRecord(
-    id: JoinGameRequestId,
-    userId: UserId,
-    createdAt: Instant
-  )
-
-  def saveJoinGameRequest(userId: UserId): IO[Unit] = {
-    val query = sql"""
-      |insert into join_requests (id, user_id, created_at)
-      |values (gen_random_uuid(), ${userId}, now() at time zone 'Z')
-      |""".stripMargin
-    query.update
-      .run
+  def saveJoinGameRequest(userId: UserId): IO[JoinRequestRecord] = {
+    val record = JoinRequestRecord.create(userId)
+    insertJoinGameRequestQuery(record)
       .transact(transactor)
-      .map(_ => ())
-  }
-
-  private def openedJoinRequestQuery(): ConnectionIO[Vector[JoinRequestRecord]] = {
-    val query = sql"""
-      |select join_requests.id, join_requests.user_id, join_requests.created_at
-      |from join_requests
-      |  left join game_events gc on
-      |    gc.event = 'GameCreated' and
-      |    (join_requests.id = uuid(gc.data->>'leftJoinRequestId') or join_requests.id = uuid(gc.data->>'rightJoinRequestId'))
-      |where gc.id is null
-      |""".stripMargin
-    query.query[JoinRequestRecord]
-      .to[Vector]
+      .map(_ => record)
   }
 
   def createGames(gameRules: GameRules): IO[Vector[GameState]] = {

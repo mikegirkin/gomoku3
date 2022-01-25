@@ -15,6 +15,7 @@ import org.mockito.Mockito.*
 import org.typelevel.ci.CIString
 import net.girkin.gomoku3.Ops.*
 import net.girkin.gomoku3.auth.AuthUser.AuthToken
+import net.girkin.gomoku3.store.PsqlJoinGameRequestsQueries.JoinRequestRecord
 import net.girkin.gomoku3.store.{GameStateStore, PsqlJoinGameService}
 
 class GameRoutesSpec extends AnyWordSpec with Matchers {
@@ -60,7 +61,7 @@ class GameRoutesSpec extends AnyWordSpec with Matchers {
       val gameStateStore = mock(classOf[GameStateStore])
       val joinGameService = mock(classOf[PsqlJoinGameService])
       when(joinGameService.saveJoinGameRequest(userId))
-        .thenReturn(IO.pure(()))
+        .thenReturn(IO.pure(JoinRequestRecord.create(userId)))
       when(joinGameService.createGames(rules))
         .thenReturn(IO.pure(Vector.empty))
 
