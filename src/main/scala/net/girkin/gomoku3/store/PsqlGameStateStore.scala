@@ -16,7 +16,7 @@ import doobie.postgres.pgisimplicits.*
 import java.time.Instant
 
 class PsqlGameStateStore(transactor: Transactor[IO]) extends GameStateStore {
-  import PsqlDoobieIdRepresentations.*
+  import PsqlDoobieIdRepresentations.given
 
   private case class GameDBRecord(
     gameId: GameId,
@@ -38,15 +38,18 @@ class PsqlGameStateStore(transactor: Transactor[IO]) extends GameStateStore {
     playerNumber: Player
   )
 
-  override def insert(game: GameState): IO[Unit] = {
+  def insertQuery(game: GameState): ConnectionIO[Unit] = {
     val query = sql"""insert into games (id, created_at, player_one, player_two, height, width, win_condition)
-         |values (${game.gameId}, ${game.createdAt}, ${game.playerOne}, ${game.playerTwo},
-         |  ${game.game.rules.height}, ${game.game.rules.width}, ${game.game.rules.winCondition})
-         |""".stripMargin
+                     |values (${game.gameId}, ${game.createdAt}, ${game.playerOne}, ${game.playerTwo},
+                     |  ${game.game.rules.height}, ${game.game.rules.width}, ${game.game.rules.winCondition})
+                     |""".stripMargin
     query.update
       .run
-      .transact(transactor)
       .map(_ => ())
+  }
+
+  override def insert(game: GameState): IO[Unit] = {
+    insertQuery(game).transact(transactor)
   }
 
   override def get(gameId: GameId): IO[Option[GameState]] = {

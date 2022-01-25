@@ -23,7 +23,7 @@ trait UserReporitory[F[_]] {
 }
 
 class PsqlUserRepository(transactor: Transactor[IO]) extends UserReporitory[IO] {
-  import net.girkin.gomoku3.PsqlDoobieIdRepresentations.*
+  import net.girkin.gomoku3.PsqlDoobieIdRepresentations.given
 
   override def getById(
     userId: UserId

@@ -12,15 +12,16 @@ import java.util.UUID
 
 object PsqlDoobieIdRepresentations {
 
-  implicit val userIdGet: Get[UserId] = Get[UUID].tmap { uuid => UserId.fromUUID(uuid) }
-  implicit val userIdPut: Put[UserId] = Put[UUID].tcontramap { userId => userId.toUUID }
+  private def idMeta[T <: UUID](converter: OpaqueUUIDExtensions[T] & IdCreator[T]): Meta[T] =
+    Meta[UUID].timap(converter.fromUUID)(converter.idToUUID)
 
-  implicit val gameIdGet: Get[GameId] = Get[UUID].tmap { uuid => GameId.fromUUID(uuid) }
-  implicit val gameIdPut: Put[GameId] = Put[UUID].tcontramap { gameId => gameId.toUUID }
+  given userIdGet: Meta[UserId] = idMeta[UserId](UserId)
+  given gameIdGet: Meta[GameId] = idMeta[GameId](GameId)
+  given moveIdMeta: Meta[MoveId] = idMeta[MoveId](MoveId)
+  given joinGameRequestIdMeta: Meta[JoinGameRequestId] = idMeta[JoinGameRequestId](JoinGameRequestId)
+  given gameCreatedIdMeta: Meta[GameCreatedId] = idMeta[GameCreatedId](GameCreatedId)
 
-  implicit val moveIdMeta: Meta[MoveId] = Meta[UUID].timap(MoveId.fromUUID)(_.toUUID)
-
-  implicit val playerMeta: Meta[Player] = Meta[Int].timap {
+  given playerMeta: Meta[Player] = Meta[Int].timap {
     case 1 => Player.One
     case 2 => Player.Two
   } {

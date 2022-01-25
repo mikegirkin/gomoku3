@@ -1,0 +1,13 @@
+* BE logic
+ 
+** DONE /joinRandom creates a new player queue 
+   CLOSED: [2022-01-25 Tue 20:44]
+
+** TODO Change game_created table to game
+
+** TODO Refactor GameStateStore and JoinGameService: split queries and transaction execution
+
+** TODO Return active games for the user 
+
+** TODO Prevent users from joining 2 active games simultaneously
+  

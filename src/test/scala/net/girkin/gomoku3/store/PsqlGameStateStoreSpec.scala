@@ -5,7 +5,7 @@ import doobie.util.transactor.Transactor
 import net.girkin.gomoku3.{GameMoveRequest, GameRules, GameState}
 import net.girkin.gomoku3.Ids.*
 import net.girkin.gomoku3.auth.{PsqlUserRepository, User}
-import net.girkin.gomoku3.testutil.IOTest
+import net.girkin.gomoku3.testutil.{DBTest, IOTest}
 import net.girkin.gomoku3.Player
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -13,14 +13,9 @@ import org.scalatest.wordspec.AnyWordSpec
 import java.time.Instant
 import java.util.UUID
 
-class PsqlGameStateStoreSpec extends AnyWordSpec with Matchers with IOTest {
-  val xa = Transactor.fromDriverManager[IO](
-    "org.postgresql.Driver",
-    "jdbc:postgresql://localhost:5432/gomoku3"
-  )
-
-  val userStore = new PsqlUserRepository(xa)
-  val gameStateStore = new PsqlGameStateStore(xa)
+class PsqlGameStateStoreSpec extends AnyWordSpec with Matchers with IOTest with DBTest {
+  val userStore = new PsqlUserRepository(tr)
+  val gameStateStore = new PsqlGameStateStore(tr)
 
   "PsqlGameStateStore" should {
     val userOneId = UserId.create
@@ -64,3 +59,5 @@ class PsqlGameStateStoreSpec extends AnyWordSpec with Matchers with IOTest {
     }
   }
 }
+
+
