@@ -7,15 +7,16 @@ import net.girkin.gomoku3.Ids.*
 import net.girkin.gomoku3.auth.{PsqlUserRepository, User}
 import net.girkin.gomoku3.testutil.{DBTest, IOTest}
 import net.girkin.gomoku3.Player
+import net.girkin.gomoku3.store.psql.PsqlGameStateQueries
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.time.Instant
 import java.util.UUID
 
-class PsqlGameStateStoreSpec extends AnyWordSpec with Matchers with IOTest with DBTest {
+class GameStateStoreSpec extends AnyWordSpec with Matchers with IOTest with DBTest {
   val userStore = new PsqlUserRepository(tr)
-  val gameStateStore = new PsqlGameStateStore(tr)
+  val gameStateStore = new GameStateStore(PsqlGameStateQueries, tr)
 
   "PsqlGameStateStore" should {
     val userOneId = UserId.create
@@ -49,7 +50,7 @@ class PsqlGameStateStoreSpec extends AnyWordSpec with Matchers with IOTest with 
       val moveMade = newGameState.game.movesMade.last
 
       val fetchedGameF = for {
-        _ <- gameStateStore.insertMove(gameState.gameId, moveMade)
+        moveDbRecord <- gameStateStore.insertMove(gameState.gameId, moveMade)
         fetchedGame <- gameStateStore.get(gameState.gameId)
       } yield {
         fetchedGame

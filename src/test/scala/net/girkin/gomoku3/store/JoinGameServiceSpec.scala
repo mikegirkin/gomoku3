@@ -6,15 +6,16 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import net.girkin.gomoku3.Ids.*
 import net.girkin.gomoku3.auth.{PsqlUserRepository, User}
+import net.girkin.gomoku3.store.psql.{PsqlGameEventQueries, PsqlGameStateQueries, PsqlJoinGameRequestQueries}
 import org.scalatest.Inside
 
 import java.time.Instant
 
-class PsqlJoinGameServiceSpec extends AnyWordSpec with Matchers with IOTest with DBTest with Inside {
+class JoinGameServiceSpec extends AnyWordSpec with Matchers with IOTest with DBTest with Inside {
   "JoinGameService" should {
-    val gameStateStore = new PsqlGameStateStore(tr)
+    val gameStateStore = new GameStateStore(PsqlGameStateQueries, tr)
     val userStore = new PsqlUserRepository(tr)
-    val service = new PsqlJoinGameService(gameStateStore, tr)
+    val service = new JoinGameService(PsqlGameStateQueries, PsqlGameEventQueries, PsqlJoinGameRequestQueries, tr)
 
     "be able to pair two requests and create a game" in {
       val userOneId = UserId.create

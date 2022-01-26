@@ -1,24 +1,45 @@
 package net.girkin.gomoku3.http
 
-import cats.effect.IO
+import cats.*
+import cats.implicits.*
+import cats.effect.*
 import cats.effect.unsafe.IORuntime
 import net.girkin.gomoku3.GameRules
-import net.girkin.gomoku3.Ids.UserId
+import net.girkin.gomoku3.Ids.{JoinGameRequestId, UserId}
 import net.girkin.gomoku3.auth.{AuthUser, CookieAuth, PrivateKey}
 import net.girkin.gomoku3.testutil.IOTest
 import org.http4s.*
 import org.http4s.headers.Location
 import org.http4s.implicits.*
+import doobie.*
+import doobie.implicits.*
+import doobie.implicits.javasql.*
+import doobie.postgres.*
+import doobie.postgres.implicits.*
+import doobie.postgres.pgisimplicits.*
+import doobie.free.connection
+import doobie.util.transactor.{Strategy, Transactor}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.mockito.Mockito.*
 import org.typelevel.ci.CIString
 import net.girkin.gomoku3.Ops.*
 import net.girkin.gomoku3.auth.AuthUser.AuthToken
-import net.girkin.gomoku3.store.PsqlJoinGameRequestsQueries.JoinRequestRecord
-import net.girkin.gomoku3.store.{GameStateStore, PsqlJoinGameService}
+import net.girkin.gomoku3.store.{GameEventQueries, GameStateQueries, GameStateStore, JoinGameRequestQueries, JoinGameService, JoinRequestRecord}
+import org.mockito.ArgumentMatcher
+import org.mockito.ArgumentMatchers.{any, argThat}
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.stubbing.Answer
 
 class GameRoutesSpec extends AnyWordSpec with Matchers {
+
+  private def argWhere[T](predicate: PartialFunction[T, Boolean]) = argThat {
+    new ArgumentMatcher[T] {
+      override def matches(argument: T): Boolean = {
+        predicate.lift.apply(argument).getOrElse(false)
+      }
+    }
+  }
 
   implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global
 
@@ -54,17 +75,31 @@ class GameRoutesSpec extends AnyWordSpec with Matchers {
     "create a new player queue record" in {
       import org.http4s.dsl.io._
 
+      val transactor = Transactor(
+        (),
+        (_: Unit) => Resource.pure(null),
+        KleisliInterpreter[IO].ConnectionInterpreter,
+        Strategy.void
+      )
+
       val userId = UserId.create
       val authToken: AuthToken = AuthUser.AuthToken(userId)
       val rules = GameRules(3, 3, 3)
 
-      val gameStateStore = mock(classOf[GameStateStore])
-      val joinGameService = mock(classOf[PsqlJoinGameService])
-      when(joinGameService.saveJoinGameRequest(userId))
-        .thenReturn(IO.pure(JoinRequestRecord.create(userId)))
-      when(joinGameService.createGames(rules))
-        .thenReturn(IO.pure(Vector.empty))
+      val gameStateQueries = mock(classOf[GameStateQueries], (invocation: InvocationOnMock) => ???)
+      val gameStateStore = new GameStateStore(gameStateQueries, transactor)
+      val joinGameRequestQueries = mock(classOf[JoinGameRequestQueries])
+      when(joinGameRequestQueries.insertJoinGameRequestQuery(argWhere {
+        case JoinRequestRecord(_, argUserId, _) => argUserId == userId
+      })).thenReturn(
+        connection.pure(JoinRequestRecord.create(userId))
+      )
+      when(joinGameRequestQueries.openedJoinRequestQuery())
+        .thenReturn(connection.pure(Vector.empty))
 
+      val gameEventQueries = mock(classOf[GameEventQueries], (invocation: InvocationOnMock) => ???)
+
+      val joinGameService = new JoinGameService(gameStateQueries, gameEventQueries, joinGameRequestQueries, transactor)
       val gameService = new GameRoutesService(gameStateStore, joinGameService, rules)
       val service = new GameRoutes(auth, gameService).routes.orNotFound
 
@@ -80,8 +115,6 @@ class GameRoutesSpec extends AnyWordSpec with Matchers {
       val response = responseF.unsafeRunSync()
 
       response.status shouldBe Accepted
-      verify(joinGameService, times(1)).saveJoinGameRequest(userId)
-      verify(joinGameService, times(1)).createGames(rules)
     }
   }
 }

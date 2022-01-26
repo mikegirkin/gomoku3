@@ -1,6 +1,6 @@
 * BE logic
  
-** DONE /joinRandom creates a new player queue 
+** DONE /joinRandom creates a new player queue
    CLOSED: [2022-01-25 Tue 20:44]
 
 ** DONE Change game_created table to game events
@@ -12,3 +12,6 @@
 
 ** TODO Prevent users from joining 2 active games simultaneously
   
+
+
+

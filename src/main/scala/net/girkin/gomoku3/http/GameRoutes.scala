@@ -3,7 +3,7 @@ package net.girkin.gomoku3.http
 import cats.effect.IO
 import net.girkin.gomoku3.{GameRules, Logging}
 import net.girkin.gomoku3.auth.{AuthUser, CookieAuth}
-import net.girkin.gomoku3.store.{GameStateStore, PsqlJoinGameService}
+import net.girkin.gomoku3.store.{GameStateStore, JoinGameService}
 import org.http4s.{AuthedRoutes, HttpRoutes, Response}
 import org.http4s.dsl.Http4sDsl
 
@@ -26,7 +26,7 @@ class GameRoutes(
 
 class GameRoutesService(
   gameStateStore: GameStateStore,
-  joinGameService: PsqlJoinGameService,
+  joinGameService: JoinGameService,
   defaultGameRules: GameRules
 ) extends Http4sDsl[IO] with Logging {
   def listGames(token: AuthUser.AuthToken): IO[Response[IO]] = {
