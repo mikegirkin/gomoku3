@@ -1,5 +1,6 @@
 package net.girkin.gomoku3.store.psql
 
+import cats.data.NonEmptyList
 import doobie.*
 import doobie.implicits.*
 import doobie.implicits.javasql.*
@@ -7,7 +8,7 @@ import doobie.postgres.*
 import doobie.postgres.implicits.*
 import doobie.postgres.pgisimplicits.*
 import net.girkin.gomoku3.DoobieIdRepresentations.given
-import net.girkin.gomoku3.Ids.{GameId, MoveId}
+import net.girkin.gomoku3.Ids.{GameId, MoveId, UserId}
 import net.girkin.gomoku3.store.{GameDBRecord, GameStateQueries, MoveDbRecord}
 import net.girkin.gomoku3.{GameState, Player}
 
@@ -34,6 +35,25 @@ object PsqlGameStateQueries extends GameStateQueries {
     """.stripMargin
       .query[GameDBRecord]
       .option
+  }
+
+
+  override def getForUserQuery(
+    userId: UserId, activeFilter: Option[Boolean]
+  ): ConnectionIO[Vector[GameDBRecord]] = {
+    val expectedValuesForGameFinishedEvent = activeFilter.map(x => NonEmptyList.one(x)).getOrElse(NonEmptyList(true, List(false)))
+    val q =
+      fr"""select g.id, g.created_at, player_one, player_two, height, width, win_condition
+          |from games g
+          |  left join game_events ge on g.id = ge.game_id and event = 'GameFinished'
+          |where
+          |  (player_one = ${userId} or player_two = ${userId}) and """.stripMargin
+        ++ Fragments.in(
+             fr"""case when ge.id is null then TRUE
+                 |     else FALSE
+                 |end""".stripMargin, expectedValuesForGameFinishedEvent)
+    q.query[GameDBRecord]
+      .to[Vector]
   }
 
   def insertMoveQuery(gameId: GameId, moveId: MoveId, row: Int, col: Int, playerNumber: Player): ConnectionIO[MoveDbRecord] = {

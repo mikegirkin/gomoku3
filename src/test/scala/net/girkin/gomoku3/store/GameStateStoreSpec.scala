@@ -23,7 +23,7 @@ class GameStateStoreSpec extends AnyWordSpec with Matchers with IOTest with DBTe
     val userOne = User(userOneId, userOneId.toString + "@test.com", Instant.now())
     val userTwoId = UserId.create
     val userTwo = User(userTwoId, userTwoId.toString + "@test.com", Instant.now())
-    val gameState = GameState.create(userOne.userId, userTwo.userId, GameRules(3, 3, 3))
+    val gameState = GameState.create(userOne.id, userTwo.id, GameRules(3, 3, 3))
 
     "be able to save initial game state" in {
       val result = for {

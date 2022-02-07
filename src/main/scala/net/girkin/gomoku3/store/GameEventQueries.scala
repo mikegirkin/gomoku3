@@ -21,6 +21,10 @@ object GameEvent {
   def gameCreated(gameId: GameId, leftJoinRequestId: JoinGameRequestId, rightJoinRequestId: JoinGameRequestId): GameCreated = {
     GameEvent.GameCreated(GameEventId.create, gameId, leftJoinRequestId, rightJoinRequestId, Instant.now())
   }
+
+  def gameFinished(gameId: GameId): GameFinished = {
+    GameEvent.GameFinished(GameEventId.create, gameId, Instant.now())
+  }
 }
 
 trait GameEventQueries {

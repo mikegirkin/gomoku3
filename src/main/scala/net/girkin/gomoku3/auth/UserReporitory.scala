@@ -44,7 +44,7 @@ class PsqlUserRepository(transactor: Transactor[IO]) extends UserReporitory[IO] 
   override def insertOrUpdate(user: User): IO[Unit] = {
     val query =
       sql"""insert into users (id, email, created_at)
-           |values (${user.userId}, ${user.email}, ${user.createdAt})
+           |values (${user.id}, ${user.email}, ${user.createdAt})
            |on conflict (id) do
            |update set email = excluded.email""".stripMargin
 

@@ -26,8 +26,8 @@ class JoinGameServiceSpec extends AnyWordSpec with Matchers with IOTest with DBT
       val resultF = for {
         _ <- userStore.insertOrUpdate(userOne)
         _ <- userStore.insertOrUpdate(userTwo)
-        _ <- service.saveJoinGameRequest(userOne.userId)
-        _ <- service.saveJoinGameRequest(userTwo.userId)
+        _ <- service.saveJoinGameRequest(userOne.id)
+        _ <- service.saveJoinGameRequest(userTwo.id)
         games <- service.createGames(rules)
       } yield {
         games
@@ -40,7 +40,7 @@ class JoinGameServiceSpec extends AnyWordSpec with Matchers with IOTest with DBT
         case GameState(gameId, createdAt, playerOne, playerTwo,
           Game(field, expectingMoveFrom, fetchedRules, movesMade)
         ) => {
-          List(playerOne, playerTwo) should contain theSameElementsAs List(userOne.userId, userTwo.userId)
+          List(playerOne, playerTwo) should contain theSameElementsAs List(userOne.id, userTwo.id)
           fetchedRules shouldBe rules
           movesMade shouldBe empty
         }

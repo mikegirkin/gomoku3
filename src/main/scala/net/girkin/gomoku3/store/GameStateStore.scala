@@ -31,6 +31,11 @@ class GameStateStore(
     query.value.transact(transactor)
   }
 
+  def getForUser(userId: UserId, activeFilter: Option[Boolean]) = {
+    gameStateQueries.getForUserQuery(userId, activeFilter)
+      .transact(transactor)
+  }
+
   def insertMove(gameId: GameId, moveMade: MoveMade): IO[MoveDbRecord] = {
     gameStateQueries.insertMoveQuery(gameId, moveMade.moveId, moveMade.row, moveMade.col, moveMade.player)
       .transact(transactor)

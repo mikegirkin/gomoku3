@@ -28,7 +28,7 @@ class PsqlUserRepositoryItTest extends AnyWordSpec with Matchers with IOTest {
     }
 
     "be able to retrieve user back by Id" in {
-      val fetched = repo.getById(user.userId).unsafeRunSync()
+      val fetched = repo.getById(user.id).unsafeRunSync()
 
       fetched shouldBe Some(user)
     }
@@ -43,7 +43,7 @@ class PsqlUserRepositoryItTest extends AnyWordSpec with Matchers with IOTest {
       val updatedUser = user.copy(email = "UPDATED" + user.email)
       repo.insertOrUpdate(updatedUser).unsafeRunSync()
 
-      val fetched = repo.getById(user.userId).unsafeRunSync()
+      val fetched = repo.getById(user.id).unsafeRunSync()
 
       fetched shouldBe Some(updatedUser)
     }

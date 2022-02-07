@@ -12,7 +12,7 @@ import net.girkin.gomoku3.store.psql.PsqlGameEventQueries
 import java.time.Instant
 
 class JoinGameService(
-  gameStateStore: GameStateQueries,
+  gameStateQueries: GameStateQueries,
   gameEventQueries: GameEventQueries,
   joinGameRequestQueries: JoinGameRequestQueries,
   transactor: Transactor[IO]
@@ -50,7 +50,7 @@ class JoinGameService(
   ): ConnectionIO[GameState] = {
     val newGame = GameState.create(leftRequest.userId, rightRequest.userId, gameRules)
     for {
-      _ <- gameStateStore.insertQuery(newGame)
+      _ <- gameStateQueries.insertQuery(newGame)
       event = GameEvent.gameCreated(newGame.gameId, leftRequest.id, rightRequest.id)
       gameCreatedRecord <- gameEventQueries.insertGameCreatedQuery(event)
     } yield {

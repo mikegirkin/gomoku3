@@ -177,7 +177,7 @@ class GoogleAuthImpl[F[_]: Concurrent](
             path = Some("/")
           )
         )),
-        AuthUser.AuthToken(user.userId)
+        AuthUser.AuthToken(user.id)
       )
     }
 

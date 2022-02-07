@@ -17,6 +17,13 @@ case class GameDBRecord(
   winCondition: Int
 )
 
+object GameDBRecord {
+  def fromGameState(gameState: GameState) = {
+    GameDBRecord(gameState.gameId, gameState.createdAt, gameState.playerOne, gameState.playerTwo,
+      gameState.game.rules.height, gameState.game.rules.width, gameState.game.rules.winCondition)
+  }
+}
+
 case class MoveDbRecord(
   moveId: MoveId,
   gameId: GameId,
@@ -31,6 +38,8 @@ trait GameStateQueries {
   def insertQuery(game: GameState): ConnectionIO[Unit]
 
   def getByIdQuery(gameId: GameId): ConnectionIO[Option[GameDBRecord]]
+
+  def getForUserQuery(userId: UserId, activeFilter: Option[Boolean]): ConnectionIO[Vector[GameDBRecord]]
 
   def insertMoveQuery(gameId: GameId, moveId: MoveId, row: Int, col: Int, playerNumber: Player): ConnectionIO[MoveDbRecord]
 

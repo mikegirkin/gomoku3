@@ -6,7 +6,7 @@ import net.girkin.gomoku3.Ids.UserId
 import java.time.Instant
 
 case class User(
-  userId: UserId,
+  id: UserId,
   email: String,
   createdAt: Instant
 )
