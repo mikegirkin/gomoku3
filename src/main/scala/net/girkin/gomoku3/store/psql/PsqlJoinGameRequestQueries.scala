@@ -38,4 +38,17 @@ object PsqlJoinGameRequestQueries extends JoinGameRequestQueries {
       .unique
   }
 
+  override def getActiveForUser(userId: UserId): ConnectionIO[Vector[JoinRequestRecord]] = {
+    val query =
+      sql"""
+           |select join_requests.id, join_requests.user_id, join_requests.created_at
+           |from join_requests
+           |  left join game_events ge on
+           |    ge.event = 'GameCreated' and
+           |    (join_requests.id = uuid(ge.data->>'leftJoinRequestId') or join_requests.id = uuid(ge.data->>'rightJoinRequestId'))
+           |where ge.id is null and join_requests.user_id = ${userId}
+           |""".stripMargin
+    query.query[JoinRequestRecord]
+      .to[Vector]
+  }
 }

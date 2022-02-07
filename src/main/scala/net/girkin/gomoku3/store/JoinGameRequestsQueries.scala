@@ -18,4 +18,5 @@ object JoinRequestRecord {
 trait JoinGameRequestQueries {
   def openedJoinRequestQuery(): ConnectionIO[Vector[JoinRequestRecord]]
   def insertJoinGameRequestQuery(joinRequestRecord: JoinRequestRecord): ConnectionIO[JoinRequestRecord]
+  def getActiveForUser(userId: UserId): ConnectionIO[Vector[JoinRequestRecord]]
 }

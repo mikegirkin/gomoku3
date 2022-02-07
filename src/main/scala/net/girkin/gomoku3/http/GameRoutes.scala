@@ -60,6 +60,12 @@ class GameRoutesService(
         (),
         JoinGameError.UserAlreadyInActiveGame,
       )
+      existingRequests <- joinGameService.getActiveUserRequests(token.userId) |> EitherT.right.apply
+      _ <- EitherT.cond(
+        existingRequests.isEmpty,
+        (),
+        JoinGameError.UserAlreadyQueued
+      )
       _ <- joinGameService.saveJoinGameRequest(token.userId) |> EitherT.right.apply
       gamesCreated <- joinGameService.createGames(defaultGameRules) |> EitherT.right.apply
     } yield {

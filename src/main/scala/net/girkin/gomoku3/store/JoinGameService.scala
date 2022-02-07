@@ -43,6 +43,11 @@ class JoinGameService(
     transaction.transact(transactor)
   }
 
+  def getActiveUserRequests(userId: UserId): IO[Vector[JoinRequestRecord]] = {
+    joinGameRequestQueries.getActiveForUser(userId)
+      .transact(transactor)
+  }
+
   private def createAndSaveGame(
     gameRules: GameRules,
     leftRequest: JoinRequestRecord,

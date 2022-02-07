@@ -107,6 +107,23 @@ class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar wi
         result shouldBe Left(JoinGameError.UserAlreadyInActiveGame)
       }
     }
+
+    "prevent creating join request if there is already one" in ioTest {
+      val existingRequest: JoinRequestRecord = JoinRequestRecord.create(user.id)
+      val setup = new FullSeviceSetup {
+        when(gameStateQueries.getForUserQuery(user.id, Some(true)))
+          .thenReturn(connection.pure(Vector.empty))
+        when(joinGameRequestQueries.getActiveForUser(user.id))
+          .thenReturn(connection.pure(Vector(JoinRequestRecord.create(user.id))))
+      }
+      import setup.*
+
+      for {
+        result <- gameService.joinRandomGame(authToken)
+      } yield {
+        result shouldBe Left(JoinGameError.UserAlreadyQueued)
+      }
+    }
   }
 
   "listGames" should {
