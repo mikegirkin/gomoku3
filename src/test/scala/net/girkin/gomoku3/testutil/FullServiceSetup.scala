@@ -3,14 +3,16 @@ package net.girkin.gomoku3.testutil
 import cats.effect.{IO, Resource}
 import doobie.Transactor
 import doobie.free.KleisliInterpreter
-import doobie.util.transactor.{Strategy, Transactor}
+import doobie.util.transactor.{Interpreter, Strategy, Transactor}
 import net.girkin.gomoku3.GameRules
 import net.girkin.gomoku3.auth.{CookieAuth, PrivateKey}
 import net.girkin.gomoku3.http.{GameRoutes, GameRoutesService}
 import net.girkin.gomoku3.store.{GameEventQueries, GameStateQueries, GameStateStore, JoinGameRequestQueries, JoinGameService}
 import org.http4s.implicits.*
 
-trait NoopTransactor {
+import java.sql.{Connection, DriverManager}
+
+trait NoopTransactor extends MockitoScalaSugar {
   val transactor = Transactor(
     (),
     (_: Unit) => Resource.pure(null),

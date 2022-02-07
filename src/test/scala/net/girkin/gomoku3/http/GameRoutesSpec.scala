@@ -19,6 +19,7 @@ import net.girkin.gomoku3.auth.AuthUser.AuthToken
 import net.girkin.gomoku3.auth.{AuthUser, CookieAuth, PrivateKey, User}
 import net.girkin.gomoku3.http.Codecs.given
 import net.girkin.gomoku3.store.*
+import net.girkin.gomoku3.testutil.TestDataMaker.createTestUser
 import net.girkin.gomoku3.testutil.{FullSeviceSetup, IOTest, MockitoScalaSugar}
 import net.girkin.gomoku3.{GameRules, GameState}
 import org.http4s.*
@@ -65,37 +66,46 @@ class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar wi
     }
   }
 
-  "/games/joinRandom" should {
-    import org.http4s.dsl.io.*
+  "joinRandomGame" should {
+    import GameRoutesService.JoinGameError
+
+    val user: User = createTestUser()
+    val authToken: AuthToken = AuthUser.AuthToken(user.id)
 
     "create a new player queue record" in {
-      val userId = UserId.create
-      val authToken: AuthToken = AuthUser.AuthToken(userId)
-
       val setup = new FullSeviceSetup {
         when(joinGameRequestQueries.insertJoinGameRequestQuery(argWhere {
-          case JoinRequestRecord(_, argUserId, _) => argUserId == userId
+          case JoinRequestRecord(_, argUserId, _) => argUserId == user.id
         })).thenReturn(
-          connection.pure(JoinRequestRecord.create(userId))
+          connection.pure(JoinRequestRecord.create(user.id))
         )
         when(joinGameRequestQueries.openedJoinRequestQuery())
           .thenReturn(connection.pure(Vector.empty))
       }
       import setup.*
-      val service = gameRoutes.routes.orNotFound
 
-      val responseF = for {
-        token <- auth.signToken(authToken)
-        request = Request[IO](Method.POST, uri = uri"/games/joinRandom")
-          .addCookie(auth.authCookieName, token)
-        response <- service.run(request)
+      for {
+        result <- gameService.joinRandomGame(authToken)
       } yield {
-        response
+        result shouldBe Right(())
       }
+    }
 
-      val response = responseF.unsafeRunSync()
+    "prevent joining a second game if user is in an active game" in ioTest {
+      val otherUser: User = createTestUser()
+      val activeGame = GameState.create(user.id, otherUser.id, GameRules(3, 3, 3))
 
-      response.status shouldBe Accepted
+      val setup = new FullSeviceSetup {
+        when(gameStateQueries.getForUserQuery(user.id, Some(true)))
+          .thenReturn(connection.pure(Vector(activeGame)))
+      }
+      import setup.*
+
+      for {
+        result <- gameService.joinRandomGame(authToken)
+      } yield {
+        result shouldBe Left(JoinGameError.UserAlreadyInActiveGame)
+      }
     }
   }
 

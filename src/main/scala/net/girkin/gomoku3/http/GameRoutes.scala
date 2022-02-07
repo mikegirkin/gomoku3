@@ -3,13 +3,16 @@ package net.girkin.gomoku3.http
 import cats.effect.IO
 import net.girkin.gomoku3.{GameRules, Logging}
 import net.girkin.gomoku3.auth.{AuthUser, CookieAuth}
-import net.girkin.gomoku3.store.{GameStateStore, JoinGameService}
+import net.girkin.gomoku3.store.{GameDBRecord, GameStateStore, JoinGameService}
 import org.http4s.*
 import org.http4s.dsl.Http4sDsl
 import io.circe.*
 import io.circe.syntax.*
 import Codecs.given
-import org.http4s.circe.CirceEntityEncoder._
+import cats.data.EitherT
+import org.http4s.circe.CirceEntityEncoder.*
+import net.girkin.gomoku3.Ops.*
+import cats.syntax.either.*
 
 class GameRoutes(
   auth: CookieAuth[IO],
@@ -36,6 +39,8 @@ class GameRoutesService(
   defaultGameRules: GameRules
 ) extends Http4sDsl[IO] with Logging {
 
+  import GameRoutesService.*
+
   def listGames(token: AuthUser.AuthToken, active: Option[Boolean]): IO[Response[IO]] = {
     for {
       games <- gameStateStore.getForUser(token.userId, active)
@@ -45,14 +50,29 @@ class GameRoutesService(
     }
   }
 
-  def joinRandomGame(token: AuthUser.AuthToken): IO[Unit] = {
-    for {
-      _ <- joinGameService.saveJoinGameRequest(token.userId)
-      gamesCreated <- joinGameService.createGames(defaultGameRules)
+  def joinRandomGame(token: AuthUser.AuthToken): IO[Either[JoinGameError, Unit]] = {
+    val resultF = for {
+      activeGames <- EitherT.right(
+        gameStateStore.getForUser(token.userId, activeFilter = Some(true))
+      )
+      _ <- EitherT.cond[IO](
+        activeGames.isEmpty,
+        (),
+        JoinGameError.UserAlreadyInActiveGame,
+      )
+      _ <- joinGameService.saveJoinGameRequest(token.userId) |> EitherT.right.apply
+      gamesCreated <- joinGameService.createGames(defaultGameRules) |> EitherT.right.apply
     } yield {
       ()
     }
+    resultF.value
   }
+}
+
+object GameRoutesService {
+  enum JoinGameError:
+    case UserAlreadyInActiveGame
+    case UserAlreadyQueued
 }
 
 

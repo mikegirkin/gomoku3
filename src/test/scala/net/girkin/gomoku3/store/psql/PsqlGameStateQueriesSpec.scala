@@ -11,17 +11,13 @@ import org.scalatest.wordspec.AnyWordSpec
 import cats.effect.*
 import doobie.*
 import doobie.implicits.*
-import cats._
-import cats.implicits._
+import cats.*
+import cats.implicits.*
+import net.girkin.gomoku3.testutil.TestDataMaker.createTestUser
 
 import java.time.Instant
 
 class PsqlGameStateQueriesSpec extends AnyWordSpec with Matchers with IOTest with DBTest with Inside {
-
-  def createTestUser(): User = {
-    val userId = UserId.create
-    User(userId, s"${userId}@test.com", Instant.now())
-  }
 
   "PsqlGameStateQueries" should {
     val user = Range.inclusive(0, 1).map { _ =>

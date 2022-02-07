@@ -15,8 +15,10 @@
 ** DONE /games Return all games for the user
    CLOSED: [2022-02-07 Mon 22:34]
 
-** TODO Prevent users from joining 2 active games simultaneously
+** DONE Prevent users from joining 2 active games simultaneously
+   CLOSED: [2022-02-07 Mon 23:35]
   
+** TODO Prevent users from joining game if there is an unfulfilled request to join one
 
-
+** TODO 
 
