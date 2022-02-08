@@ -11,6 +11,7 @@ import io.circe.syntax.*
 import org.http4s.circe.*
 import Codecs.given
 import net.girkin.gomoku3.http.GameRoutesService.JoinGameError
+import net.girkin.gomoku3.Ids.GameId
 
 class GameRoutes(
   auth: CookieAuth[IO],
@@ -25,7 +26,10 @@ class GameRoutes(
         gameRoutesService.listGames(token, active).flatMap { games =>
           Ok(games.asJson)
         }
-      case GET -> Root / "games" / UUIDVar(id) / "state" as token => ???
+      case GET -> Root / "games" / UUIDVar(id) / "state" as token =>
+        gameRoutesService.getGameState(token, GameId.fromUUID(id)).flatMap { _ =>
+          ???
+        }
       case GET -> Root / "games" / UUIDVar(id) / "moves" as token => ???
       case PUT -> Root / "games" / UUIDVar(id) / "moves" as token => ???
       case POST -> Root / "games" / "joinRandom" as token =>

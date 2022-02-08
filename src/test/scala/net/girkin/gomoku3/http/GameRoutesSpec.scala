@@ -13,7 +13,7 @@ import doobie.postgres.implicits.*
 import doobie.postgres.pgisimplicits.*
 import doobie.util.transactor.{Strategy, Transactor}
 import io.circe.Json
-import net.girkin.gomoku3.Ids.{JoinGameRequestId, UserId}
+import net.girkin.gomoku3.Ids.{GameId, JoinGameRequestId, UserId}
 import net.girkin.gomoku3.Ops.*
 import net.girkin.gomoku3.auth.AuthUser.AuthToken
 import net.girkin.gomoku3.auth.{AuthUser, CookieAuth, PrivateKey, User}
@@ -36,6 +36,7 @@ import org.mockito.stubbing.Answer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.typelevel.ci.CIString
+import GameRoutesService.*
 
 import scala.reflect.ClassTag
 
@@ -168,6 +169,68 @@ class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar wi
         result <- gameService.listGames(userOneAuthToken, None)
       } yield {
         result should contain theSameElementsAs allGamesInStore
+      }
+    }
+  }
+
+  "getGameState" should {
+    "return NotFound when there is no such game" in ioTest {
+      val gameId = GameId.create
+      val user = createTestUser()
+      val token: AuthToken = AuthUser.AuthToken(user.id)
+
+      val setup = new FullSeviceSetup {}
+      import setup._
+      when(gameStateQueries.getByIdQuery(gameId))
+        .thenReturn(connection.pure(None))
+
+      for {
+        result <- gameService.getGameState(token, gameId)
+      } yield {
+        result shouldBe AccessError.NotFound
+      }
+    }
+
+    "return AccessDenied when the user requesting is not in the game" in ioTest {
+      val userOne = createTestUser()
+      val userTwo = createTestUser()
+      val game = GameState.create(userOne.id, userTwo.id, GameRules(3, 3, 3))
+      val otherUser = createTestUser()
+      val token: AuthToken = AuthUser.AuthToken(otherUser.id)
+      val gameDBRecord = GameDBRecord.fromGameState(game)
+
+      val setup = new FullSeviceSetup {}
+      import setup._
+      when(gameStateQueries.getByIdQuery(game.gameId))
+        .thenReturn(connection.pure(Some(gameDBRecord)))
+      when(gameStateQueries.getMovesQuery(game.gameId))
+        .thenReturn(connection.pure(Vector.empty))
+
+      for {
+        result <- gameService.getGameState(token, game.gameId)
+      } yield {
+        result shouldBe AccessError.AccessDenied
+      }
+    }
+
+    "return game state in a happy scenario" in ioTest {
+      val userOne = createTestUser()
+      val userTwo = createTestUser()
+      val game = GameState.create(userOne.id, userTwo.id, GameRules(3, 3, 3))
+      val token: AuthToken = AuthUser.AuthToken(userOne.id)
+      val gameDBRecord = GameDBRecord.fromGameState(game)
+
+      val setup = new FullSeviceSetup {}
+      import setup._
+      when(gameStateQueries.getByIdQuery(game.gameId))
+        .thenReturn(connection.pure(Some(gameDBRecord)))
+      when(gameStateQueries.getMovesQuery(game.gameId))
+        .thenReturn(connection.pure(Vector.empty))
+
+      for {
+        result <- gameService.getGameState(token, game.gameId)
+      } yield {
+        result shouldBe game
       }
     }
   }

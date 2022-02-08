@@ -21,9 +21,11 @@
 ** DONE Prevent users from joining game if there is an unfulfilled request to join one
    CLOSED: [2022-02-07 Mon 23:52]
 
-** TODO Fix /joinGame endpoint after refactor
+** DONE Fix /joinGame endpoint after refactor
+   CLOSED: [2022-02-08 Tue 17:59]
 
-** TODO Implement state retreival
+** DONE Implement state retreival
+   CLOSED: [2022-02-08 Tue 21:22]
 
 ** TODO implement requesting move endpoint
 
