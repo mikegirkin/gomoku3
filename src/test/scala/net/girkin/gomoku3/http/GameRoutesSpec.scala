@@ -154,11 +154,9 @@ class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar wi
       import env.*
 
       for {
-        response <- env.gameService.listGames(userOneAuthToken, Some(true))
-        content <- response.as[Vector[GameDBRecord]]
+        result <- env.gameService.listGames(userOneAuthToken, Some(true))
       } yield {
-        response.status shouldBe Ok
-        content shouldBe activeGamesInStore
+        result shouldBe activeGamesInStore
       }
     }
 
@@ -167,11 +165,9 @@ class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar wi
       import env.*
 
       for {
-        response <- gameService.listGames(userOneAuthToken, None)
-        content <- response.as[Vector[GameDBRecord]]
+        result <- gameService.listGames(userOneAuthToken, None)
       } yield {
-        response.status shouldBe Ok
-        content should contain theSameElementsAs allGamesInStore
+        result should contain theSameElementsAs allGamesInStore
       }
     }
   }

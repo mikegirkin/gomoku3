@@ -8,6 +8,7 @@ import io.circe.Encoder.encodeUUID
 import io.circe.generic.semiauto.*
 import cats.syntax.either.*
 import net.girkin.gomoku3.Ids.{GameId, UserId}
+import net.girkin.gomoku3.http.GameRoutesService.JoinGameError
 import net.girkin.gomoku3.{IdCreator, OpaqueUUIDExtensions}
 
 import java.util.UUID
@@ -24,4 +25,7 @@ object Codecs {
   given userIdCodec: Codec[UserId] = idCodec(UserId)
 
   given gameDBRecordCodec: Codec[GameDBRecord] = deriveCodec[GameDBRecord]
+
+  given joinGameErrorCodec: Codec[JoinGameError] = deriveCodec[JoinGameError]
+
 }

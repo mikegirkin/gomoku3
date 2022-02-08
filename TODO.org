@@ -23,6 +23,8 @@
 
 ** TODO Fix /joinGame endpoint after refactor
 
+** TODO Implement state retreival
+
 ** TODO implement requesting move endpoint
 
 * Frontend

@@ -8,11 +8,9 @@ import org.http4s.*
 import org.http4s.dsl.Http4sDsl
 import io.circe.*
 import io.circe.syntax.*
+import org.http4s.circe.*
 import Codecs.given
-import cats.data.EitherT
-import org.http4s.circe.CirceEntityEncoder.*
-import net.girkin.gomoku3.Ops.*
-import cats.syntax.either.*
+import net.girkin.gomoku3.http.GameRoutesService.JoinGameError
 
 class GameRoutes(
   auth: CookieAuth[IO],
@@ -23,62 +21,21 @@ class GameRoutes(
 
   val routes = auth.secured(
     AuthedRoutes.of[AuthUser.AuthToken, IO] {
-      case GET -> Root / "games" :? ActiveQueryParam(active) as token => gameRoutesService.listGames(token, active)
+      case GET -> Root / "games" :? ActiveQueryParam(active) as token =>
+        gameRoutesService.listGames(token, active).flatMap { games =>
+          Ok(games.asJson)
+        }
       case GET -> Root / "games" / UUIDVar(id) / "state" as token => ???
       case GET -> Root / "games" / UUIDVar(id) / "moves" as token => ???
       case PUT -> Root / "games" / UUIDVar(id) / "moves" as token => ???
-      case POST -> Root / "games" / "joinRandom" as token => gameRoutesService.joinRandomGame(token).flatMap(_ => Accepted(""))
+      case POST -> Root / "games" / "joinRandom" as token =>
+        gameRoutesService.joinRandomGame(token).flatMap {
+          case Left(reason) =>
+            val content: Json = Json.obj("reason" -> reason.asJson)
+            BadRequest(content)
+          case Right(_) => Accepted()
+        }
     }
   )
 
 }
-
-class GameRoutesService(
-  gameStateStore: GameStateStore,
-  joinGameService: JoinGameService,
-  defaultGameRules: GameRules
-) extends Http4sDsl[IO] with Logging {
-
-  import GameRoutesService.*
-
-  def listGames(token: AuthUser.AuthToken, active: Option[Boolean]): IO[Response[IO]] = {
-    for {
-      games <- gameStateStore.getForUser(token.userId, active)
-      response <- Ok(games.asJson)
-    } yield {
-      response
-    }
-  }
-
-  def joinRandomGame(token: AuthUser.AuthToken): IO[Either[JoinGameError, Unit]] = {
-    val resultF = for {
-      activeGames <- EitherT.right(
-        gameStateStore.getForUser(token.userId, activeFilter = Some(true))
-      )
-      _ <- EitherT.cond[IO](
-        activeGames.isEmpty,
-        (),
-        JoinGameError.UserAlreadyInActiveGame,
-      )
-      existingRequests <- joinGameService.getActiveUserRequests(token.userId) |> EitherT.right.apply
-      _ <- EitherT.cond(
-        existingRequests.isEmpty,
-        (),
-        JoinGameError.UserAlreadyQueued
-      )
-      _ <- joinGameService.saveJoinGameRequest(token.userId) |> EitherT.right.apply
-      gamesCreated <- joinGameService.createGames(defaultGameRules) |> EitherT.right.apply
-    } yield {
-      ()
-    }
-    resultF.value
-  }
-}
-
-object GameRoutesService {
-  enum JoinGameError:
-    case UserAlreadyInActiveGame
-    case UserAlreadyQueued
-}
-
-
