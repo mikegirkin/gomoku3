@@ -40,3 +40,9 @@ trait FullSeviceSetup extends AuthSetup with MockitoScalaSugar with NoopTransact
   val gameRoutes = new GameRoutes(auth, gameService)
 }
 
+trait RoutesSetup extends AuthSetup with MockitoScalaSugar {
+  val gameService = mock[GameRoutesService]
+  val gameRoutes = new GameRoutes(auth, gameService)
+  val service = gameRoutes.routes.orNotFound
+}
+

@@ -27,6 +27,9 @@
 ** DONE Implement state retreival
    CLOSED: [2022-02-08 Tue 21:22]
 
+** DONE Tests for GET /games/:id endpoint
+   CLOSED: [2022-02-09 Wed 15:21]
+
 ** TODO implement requesting move endpoint
 
 * Frontend

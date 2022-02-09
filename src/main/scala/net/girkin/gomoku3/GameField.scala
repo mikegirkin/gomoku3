@@ -5,7 +5,8 @@ opaque type CellState = Option[Player]
 object CellState {
   def empty: CellState = None
   def taken(player: Player): CellState = Some(player)
-  
+  def fromOption(state: Option[Player]): CellState = state
+
   extension (cellState: CellState) {
     def asOption: Option[Player] = cellState
   }
