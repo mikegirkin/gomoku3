@@ -5,16 +5,17 @@ import cats.*
 import cats.effect.IO
 import net.girkin.gomoku3.auth.AuthUser
 import net.girkin.gomoku3.store.{GameDBRecord, GameStateStore, JoinGameService}
-import net.girkin.gomoku3.{GameRules, GameState, Logging}
+import net.girkin.gomoku3.{Game, GameMoveRequest, GameRules, GameState, Logging, MoveAttemptFailure}
 import org.http4s.Response
 import org.http4s.dsl.Http4sDsl
 import org.http4s.circe.CirceEntityEncoder.*
 import net.girkin.gomoku3.Ops.*
+import net.girkin.gomoku3.EitherTOps.*
 import cats.syntax.either.*
 import Codecs.given
 import io.circe.*
 import io.circe.syntax.*
-import net.girkin.gomoku3.Ids.GameId
+import net.girkin.gomoku3.Ids.{GameId, MoveId, UserId}
 
 class GameRoutesService(
   gameStateStore: GameStateStore,
@@ -66,15 +67,49 @@ class GameRoutesService(
 
     resultF.merge
   }
+
+  def postMove(moveRequest: MoveRequest): IO[PostMoveResult] = {
+    val resultF = for {
+      gameOpt <- EitherT.right { gameStateStore.get(moveRequest.gameId) }
+      gameState <- EitherT.fromOption[IO](gameOpt, AccessError.NotFound)
+        .widenLeft[PostMoveResult]
+      playerOpt = gameState.whichPlayer(moveRequest.userId)
+      player <- EitherT.fromOption[IO](playerOpt, AccessError.AccessDenied)
+      newGame: Game <- EitherT.fromEither[IO] {
+        gameState.game.attemptMove(GameMoveRequest(moveRequest.row, moveRequest.col, player))
+      }.widenLeft[PostMoveResult]
+    } yield  {
+      val lastMove = newGame.movesMade.last
+      MoveRequestFulfilled(lastMove.moveId, moveRequest)
+    }
+
+    resultF.merge
+  }
 }
 
 object GameRoutesService {
-  enum JoinGameError:
+  type PostMoveResult = AccessError | MoveAttemptFailure | MoveRequestFulfilled
+
+  enum JoinGameError {
     case UserAlreadyInActiveGame
     case UserAlreadyQueued
+  }
 
-  enum AccessError:
+  enum AccessError {
     case AccessDenied
     case NotFound
+  }
+
+  case class MoveRequest(
+    gameId: GameId,
+    userId: UserId,
+    row: Int,
+    col: Int
+  )
+
+  case class MoveRequestFulfilled(
+    moveId: MoveId,
+    request: MoveRequest
+  )
 
 }

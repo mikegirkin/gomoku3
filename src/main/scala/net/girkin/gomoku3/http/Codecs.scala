@@ -8,8 +8,8 @@ import io.circe.Encoder.encodeUUID
 import io.circe.generic.semiauto.*
 import cats.syntax.either.*
 import net.girkin.gomoku3.Ids.{GameId, MoveId, UserId}
-import net.girkin.gomoku3.http.GameRoutesService.JoinGameError
-import net.girkin.gomoku3.{CellState, GameState, IdCreator, MoveMade, OpaqueUUIDExtensions, Player}
+import net.girkin.gomoku3.http.GameRoutesService.{JoinGameError, MoveRequestFulfilled}
+import net.girkin.gomoku3.{CellState, GameState, IdCreator, MoveAttemptFailure, MoveMade, OpaqueUUIDExtensions, Player}
 import CellState.*
 
 import java.util.UUID
@@ -38,4 +38,8 @@ object Codecs {
 
   given joinGameErrorCodec: Codec[JoinGameError] = deriveCodec[JoinGameError]
 
+  given Codec[RowCol] = deriveCodec[RowCol]
+
+  given Codec[MoveAttemptFailure] = deriveCodec[MoveAttemptFailure]
+  given Codec[MoveRequestFulfilled] = deriveCodec[MoveRequestFulfilled]
 }

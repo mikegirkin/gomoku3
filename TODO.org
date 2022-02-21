@@ -30,8 +30,11 @@
 ** DONE Tests for GET /games/:id endpoint
    CLOSED: [2022-02-09 Wed 15:21]
 
-** TODO implement requesting move endpoint
-
+** DONE implement requesting move endpoint  
+   CLOSED: [2022-02-21 Mon 19:18]
+** TODO GameDBRecord ideally shouldn't be returned to the outside world
+** TODO having 2 MoveRequests is a mess
+   
 * Frontend
 
 ** TODO Restructure project directory

@@ -1,15 +1,17 @@
 package net.girkin.gomoku3.http
 
 import cats.effect.*
-import net.girkin.gomoku3.Ids.GameId
+import cats.implicits.*
+import net.girkin.gomoku3.MoveAttemptFailure
+import net.girkin.gomoku3.Ids.{GameId, MoveId}
 import net.girkin.gomoku3.auth.AuthUser
 import net.girkin.gomoku3.testutil.TestDataMaker.createTestUser
 import net.girkin.gomoku3.testutil.*
-import GameRoutesService.AccessError
+import GameRoutesService.{AccessError, MoveRequest, MoveRequestFulfilled, PostMoveResult}
 import net.girkin.gomoku3.{GameRules, GameState}
 import net.girkin.gomoku3.auth.AuthUser.AuthToken
 import org.http4s.*
-import org.http4s.dsl.io.GET
+import org.http4s.client.dsl.io.*
 import org.http4s.headers.Location
 import org.http4s.implicits.*
 import org.http4s.circe.*
@@ -20,6 +22,7 @@ import org.typelevel.ci.CIString
 import Codecs.given
 import io.circe.*
 import io.circe.syntax.*
+import org.http4s.Method.{GET, POST}
 
 class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar with IOTest with HttpAuth {
 
@@ -52,7 +55,7 @@ class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar wi
     val user = createTestUser()
     val token: AuthToken = AuthUser.AuthToken(user.id)
     val gameId = GameId.create
-    val request = Request[IO](method = GET, uri = uri"/games" / gameId.toUUID)
+    val request = GET(uri"/games" / gameId.toUUID)
 
     "return 404 if there is no such game" in ioTest {
       val env = new RoutesSetup {
@@ -102,5 +105,54 @@ class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar wi
         receivedJson shouldBe gameState.asJson
       }
     }
+  }
+
+  "POST /games/:id/moves" should {
+    val user = createTestUser()
+    val token: AuthToken = AuthUser.AuthToken(user.id)
+    val gameId = GameId.create
+    val request = POST(RowCol(1, 1).asJson, uri"/games" / gameId.toUUID / "moves")
+    val moveRequest = MoveRequest(gameId, user.id, 1, 1)
+    val moveId = MoveId.create
+    val fulfilled = MoveRequestFulfilled(moveId, moveRequest)
+
+    val tests = Map[PostMoveResult, (Response[IO], Option[Json]) => Unit](
+      AccessError.NotFound -> { (response, json) =>
+        response.status shouldBe Status.NotFound
+      },
+      AccessError.AccessDenied -> { (response, json) =>
+        response.status shouldBe Status.Forbidden
+      },
+      MoveAttemptFailure.ImpossibleMove -> { (response, json) =>
+        response.status shouldBe Status.UnprocessableEntity
+      },
+      fulfilled -> { (response, json) =>
+        response.status shouldBe Status.Created
+        json.get shouldBe fulfilled.asJson
+      },
+    )
+
+    def runTest(gameServiceReturns: PostMoveResult, check: (Response[IO], Option[Json]) => Unit) = {
+      s"Pass test for ${gameServiceReturns}" in ioTest {
+        val env = new RoutesSetup {
+          when(gameService.postMove(moveRequest))
+            .thenReturn(IO.pure(gameServiceReturns))
+        }
+        import env.*
+
+        for {
+          authedRequest <- setRequestAuthCookie(auth)(request, user.id)
+          response: Response[IO] <- service.run(authedRequest)
+          responseStr <- response.as[String]
+        } yield {
+          val json = if(responseStr.isEmpty) None else {
+            Some(io.circe.parser.parse(responseStr).toOption.get)
+          }
+          check(response, json)
+        }
+      }
+    }
+
+    tests.foreach(runTest)
   }
 }

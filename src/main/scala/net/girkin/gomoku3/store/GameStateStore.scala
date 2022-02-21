@@ -31,7 +31,7 @@ class GameStateStore(
     query.value.transact(transactor)
   }
 
-  def getForUser(userId: UserId, activeFilter: Option[Boolean]) = {
+  def getForUser(userId: UserId, activeFilter: Option[Boolean]): IO[Vector[GameDBRecord]] = {
     gameStateQueries.getForUserQuery(userId, activeFilter)
       .transact(transactor)
   }
