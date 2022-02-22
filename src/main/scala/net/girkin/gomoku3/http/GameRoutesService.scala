@@ -4,8 +4,8 @@ import cats.data.EitherT
 import cats.*
 import cats.effect.IO
 import net.girkin.gomoku3.auth.AuthUser
-import net.girkin.gomoku3.store.{GameDBRecord, GameStateStore, JoinGameService}
-import net.girkin.gomoku3.{Game, GameMoveRequest, GameRules, GameState, Logging, MoveAttemptFailure}
+import net.girkin.gomoku3.store.{GameDBRecord, GameStateStore, JoinGameService, MoveDbRecord}
+import net.girkin.gomoku3.{Game, GameMoveRequest, GameRules, GameState, Logging, MoveAttemptFailure, Player}
 import org.http4s.Response
 import org.http4s.dsl.Http4sDsl
 import org.http4s.circe.CirceEntityEncoder.*
@@ -68,19 +68,41 @@ class GameRoutesService(
     resultF.merge
   }
 
+  private def getGameForUser(gameId: GameId, userId: UserId): EitherT[IO, AccessError, (GameState, Player)] = {
+    for {
+      gameOpt <- EitherT.right {
+        gameStateStore.get(gameId)
+      }
+      gameState <- EitherT.fromOption[IO](gameOpt, AccessError.NotFound)
+      playerOpt = gameState.whichPlayer(userId)
+      player <- EitherT.fromOption[IO](playerOpt, AccessError.AccessDenied)
+    } yield {
+      gameState -> player
+    }
+  }
+
   def postMove(moveRequest: MoveRequest): IO[PostMoveResult] = {
     val resultF = for {
-      gameOpt <- EitherT.right { gameStateStore.get(moveRequest.gameId) }
-      gameState <- EitherT.fromOption[IO](gameOpt, AccessError.NotFound)
+      gameAndPlayer <- getGameForUser(moveRequest.gameId, moveRequest.userId)
         .widenLeft[PostMoveResult]
-      playerOpt = gameState.whichPlayer(moveRequest.userId)
-      player <- EitherT.fromOption[IO](playerOpt, AccessError.AccessDenied)
+      (gameState, player) = gameAndPlayer
       newGame: Game <- EitherT.fromEither[IO] {
         gameState.game.attemptMove(GameMoveRequest(moveRequest.row, moveRequest.col, player))
       }.widenLeft[PostMoveResult]
     } yield  {
       val lastMove = newGame.movesMade.last
       MoveRequestFulfilled(lastMove.moveId, moveRequest)
+    }
+
+    resultF.merge
+  }
+
+  def getMoves(userId: UserId, gameId: GameId): IO[AccessError | Vector[MoveDbRecord]] = {
+    val resultF = for {
+      gameAndPlayer <- getGameForUser(gameId, userId)
+      moves <- EitherT.right { gameStateStore.getMoves(gameId) }
+    } yield {
+      moves
     }
 
     resultF.merge

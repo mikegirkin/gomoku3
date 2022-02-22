@@ -3,7 +3,7 @@ package net.girkin.gomoku3.http
 import cats.effect.IO
 import net.girkin.gomoku3.{GameRules, GameState, Logging, MoveAttemptFailure}
 import net.girkin.gomoku3.auth.{AuthUser, CookieAuth}
-import net.girkin.gomoku3.store.{GameDBRecord, GameStateStore, JoinGameService}
+import net.girkin.gomoku3.store.{GameDBRecord, GameStateStore, JoinGameService, MoveDbRecord}
 import org.http4s.*
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.dsl.Http4sDsl
@@ -40,7 +40,12 @@ class GameRoutes(
           case AccessError.AccessDenied => Forbidden()
           case gameState: GameState => Ok(gameState.asJson)
         }
-      case GET -> Root / "games" / UUIDVar(id) / "moves" as token => ???
+      case GET -> Root / "games" / UUIDVar(id) / "moves" as token =>
+        gameRoutesService.getMoves(token.userId, GameId.fromUUID(id)).flatMap {
+          case AccessError.NotFound => NotFound()
+          case AccessError.AccessDenied => Forbidden()
+          case moves: Vector[MoveDbRecord] => Ok(moves.asJson)
+        }
       case req @ POST -> Root / "games" / UUIDVar(id) / "moves" as token =>
         for {
           rowCol <- req.req.as[RowCol]

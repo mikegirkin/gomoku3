@@ -41,6 +41,11 @@ class GameStateStore(
       .transact(transactor)
   }
 
+  def getMoves(gameId: GameId): IO[Vector[MoveDbRecord]] = {
+    gameStateQueries.getMovesQuery(gameId)
+      .transact(transactor)
+  }
+
   private def restoreGameStateFromRecords(gameRecord: GameDBRecord, moveRecords: Seq[MoveDbRecord]): GameState = {
     val game = Game.create(GameRules(gameRecord.height, gameRecord.width, gameRecord.winCondition))
 

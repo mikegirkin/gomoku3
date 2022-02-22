@@ -1,6 +1,6 @@
 package net.girkin.gomoku3.http
 
-import net.girkin.gomoku3.store.GameDBRecord
+import net.girkin.gomoku3.store.{GameDBRecord, MoveDbRecord}
 import io.circe.*
 import io.circe.Codec.*
 import io.circe.Decoder.decodeUUID
@@ -42,4 +42,5 @@ object Codecs {
 
   given Codec[MoveAttemptFailure] = deriveCodec[MoveAttemptFailure]
   given Codec[MoveRequestFulfilled] = deriveCodec[MoveRequestFulfilled]
+  given Codec[MoveDbRecord] = deriveCodec[MoveDbRecord]
 }

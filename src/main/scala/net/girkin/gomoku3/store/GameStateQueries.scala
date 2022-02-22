@@ -34,6 +34,12 @@ case class MoveDbRecord(
   playerNumber: Player
 )
 
+object MoveDbRecord {
+  def create(gameId: GameId, seq: Int, row: Int, col: Int, playerNumber: Player): MoveDbRecord = {
+    MoveDbRecord(MoveId.create, gameId, seq, Instant.now(), row, col, playerNumber)
+  }
+}
+
 trait GameStateQueries {
   def insertQuery(game: GameState): ConnectionIO[Unit]
 

@@ -30,8 +30,13 @@
 ** DONE Tests for GET /games/:id endpoint
    CLOSED: [2022-02-09 Wed 15:21]
 
-** DONE implement requesting move endpoint  
+** DONE implement requesting move endpoint
    CLOSED: [2022-02-21 Mon 19:18]
+
+** DONE Get all moves of a game
+   CLOSED: [2022-02-22 Tue 23:04]
+** TODO Get single move by Id
+** TODO POST new move Created reponse should contain URL of the new move in the Location header
 ** TODO GameDBRecord ideally shouldn't be returned to the outside world
 ** TODO having 2 MoveRequests is a mess
    

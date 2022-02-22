@@ -2,13 +2,12 @@ package net.girkin.gomoku3.http
 
 import cats.effect.*
 import cats.implicits.*
-import net.girkin.gomoku3.MoveAttemptFailure
+import net.girkin.gomoku3.{GameRules, GameState, MoveAttemptFailure, Player}
 import net.girkin.gomoku3.Ids.{GameId, MoveId}
 import net.girkin.gomoku3.auth.AuthUser
 import net.girkin.gomoku3.testutil.TestDataMaker.createTestUser
 import net.girkin.gomoku3.testutil.*
 import GameRoutesService.{AccessError, MoveRequest, MoveRequestFulfilled, PostMoveResult}
-import net.girkin.gomoku3.{GameRules, GameState}
 import net.girkin.gomoku3.auth.AuthUser.AuthToken
 import org.http4s.*
 import org.http4s.client.dsl.io.*
@@ -22,6 +21,7 @@ import org.typelevel.ci.CIString
 import Codecs.given
 import io.circe.*
 import io.circe.syntax.*
+import net.girkin.gomoku3.store.MoveDbRecord
 import org.http4s.Method.{GET, POST}
 
 class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar with IOTest with HttpAuth {
@@ -146,6 +146,53 @@ class GameRoutesSpec extends AnyWordSpec with Matchers with MockitoScalaSugar wi
           responseStr <- response.as[String]
         } yield {
           val json = if(responseStr.isEmpty) None else {
+            Some(io.circe.parser.parse(responseStr).toOption.get)
+          }
+          check(response, json)
+        }
+      }
+    }
+
+    tests.foreach(runTest)
+  }
+
+  "GET /games/:id/moves" should {
+    val gameId = GameId.create
+    val user = createTestUser()
+    val request = GET(uri"/games" / gameId.toUUID / "moves")
+    val moves = Vector(
+      MoveDbRecord.create(gameId, 0, 0, 0, Player.One),
+      MoveDbRecord.create(gameId, 1, 0, 1, Player.Two),
+      MoveDbRecord.create(gameId, 2, 1, 0, Player.One),
+      MoveDbRecord.create(gameId, 3, 1, 1, Player.Two)
+    )
+    val tests = Map[AccessError | Vector[MoveDbRecord], (Response[IO], Option[Json]) => Unit](
+      AccessError.NotFound -> { (response, json) =>
+        response.status shouldBe Status.NotFound
+      },
+      AccessError.AccessDenied -> { (response, json) =>
+        response.status shouldBe Status.Forbidden
+      },
+      moves -> { (response, json) =>
+        response.status shouldBe Status.Ok
+        json.get shouldBe moves.asJson
+      },
+    )
+
+    def runTest(gameServiceReturns: AccessError | Vector[MoveDbRecord], check: (Response[IO], Option[Json]) => Unit) = {
+      s"Pass test for ${gameServiceReturns}" in ioTest {
+        val env = new RoutesSetup {
+          when(gameService.getMoves(user.id, gameId))
+            .thenReturn(IO.pure(gameServiceReturns))
+        }
+        import env.*
+
+        for {
+          authedRequest <- setRequestAuthCookie(auth)(request, user.id)
+          response <- service.run(authedRequest)
+          responseStr <- response.as[String]
+        } yield {
+          val json = if (responseStr.isEmpty) None else {
             Some(io.circe.parser.parse(responseStr).toOption.get)
           }
           check(response, json)
